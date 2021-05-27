@@ -1,12 +1,13 @@
 const canvas = document.getElementById('game');
 const context = canvas.getContext('2d');
 const grid = 32;
+let gmOver = false;
 
 //послед.фигур
-let tetrominoSequence = [];
+var tetrominoSequence = [];
 
 //поле
-let playfield = [];
+var playfield = [];
 
 //заполняем фигурами
 for (let row = -2; row < 20; row++) {
@@ -20,7 +21,10 @@ for (let row = -2; row < 20; row++) {
 //сами фигуры в виде двумерного массива
 const tetrominos = {
   'I': [
-    [1,1,1,1]
+    [0,0,0,0],
+    [1,1,1,1],
+    [0,0,0,0],
+    [0,0,0,0]
   ],
   'J': [
     [1,0,0],
@@ -72,8 +76,6 @@ let count = 0;
 let tetromino = getNextTetromino();
 //кадры
 let rAF = null;
-// обозначение конца игры
-let gameOver = false;
 
 function getRandomInt(min, max) {
   min = Math.ceil(min);
@@ -112,26 +114,22 @@ function getNextTetromino() {
     col: col
   };
 
-  console.log(param_fig.matrix);
+  //return param_fig;
   return param_fig;
 }
-
-console.log(param_fig);
 // поворот фигуры
 
-function rotate(param_fig){
-  console.log(param_fig.matrix);
-  let N = param_fig.matrix.length;
-  let matrix = param_fig.matrix;
-
-  for(let x=0; x<N; x++){
-    for(let y=0; y<N; y++){
-      matrix[y][x] = param_fig.matrix[x][N-y-1];
+  function rt(param_fig){
+    let newMatrix = [[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0]];
+    let N = param_fig.matrix.length;
+    //для фигур
+    for(let y = 0; y < N; y++){
+      for(let x = 0; x < N; x++){
+        newMatrix[x][N-y-1] = param_fig.matrix[y][x];
+      }
     }
+    return newMatrix;
   }
-  return matrix;
-}
-
 // не вылазила за поле фигура
 function isValidMove(matrix, cellRow, cellCol) {
   for (let row = 0; row < matrix.length; row++) {
@@ -158,7 +156,7 @@ function placeTetromino() {
 
         //если за поле, то игра закончена
         if (tetromino.row + row < 0) {
-          return showGameOver();
+          gameOver();
         }
         // если не за полемы
         playfield[tetromino.row + row][tetromino.col + col] = tetromino.name;
@@ -186,7 +184,7 @@ function placeTetromino() {
   tetromino = getNextTetromino();
 }
 
-// Сам цикл с игрой
+// Сам цикл с игрой.matrix
 function loop() {
   //начало анимации
   rAF = requestAnimationFrame(loop);
@@ -253,7 +251,12 @@ document.addEventListener('keydown', function(e) {
 
   //кнопка для поворота
   if (e.which === 32) {
-    rotate(param_fig);
+    // выполняем поворот
+    let matrix = rt(param_fig);
+    //если так сделать можно, то запоминаем
+    if (isValidMove(matrix, tetromino.row, tetromino.col)) {
+      tetromino.matrix = matrix;
+    }
   }
 
   // ускорение падения фигуры
@@ -269,5 +272,16 @@ document.addEventListener('keydown', function(e) {
   }
 });
 
-//СТАРТУЕМ
+function gameOver(){
+  cancelAnimationFrame(rAF);
+  gmOver = true;
+
+  context.fillStyle = 'white';
+  context.font = '36px monospace';
+  context.textAlign = 'center';
+  context.textBaseline = 'middle';
+  context.fillText('Ты проиграл', canvas.width / 2, canvas.height / 2);
+}
+
+//Старт
 rAF = requestAnimationFrame(loop);
